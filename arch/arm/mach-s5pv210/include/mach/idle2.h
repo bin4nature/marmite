@@ -20,7 +20,7 @@
 #include <linux/interrupt.h>
 
 #define MAX_CHK_DEV			0xf
-#define IDLE2_FREQ			(800 * 1000) /* Use 800MHz when entering idle2 */
+#define IDLE2_FREQ			(400 * 1000) /* Use 800MHz when entering idle2 */
 #define DISABLE_FURTHER_CPUFREQ 	0x10
 #define ENABLE_FURTHER_CPUFREQ 		0x20
 
