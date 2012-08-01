@@ -412,7 +412,7 @@ static int s5p_init_cpuidle(void)
 	/* Deep-Idle top ON Wait for interrupt state */
 	device->states[1].enter = s5p_enter_idle_deep_topon;
 	device->states[1].exit_latency = 1;	/* uS */
-	device->states[1].target_residency = 5000;
+	device->states[1].target_residency = 5000; //DAVE: TOP ON always needs to be equal or higher
 	device->states[1].flags = CPUIDLE_FLAG_TIME_VALID|
 					CPUIDLE_FLAG_CHECK_BM;
 	strcpy(device->states[1].name, "IDLE2-TOPON");
@@ -422,7 +422,7 @@ static int s5p_init_cpuidle(void)
 	/* Deep-Idle top OFF Wait for interrupt state */
 	device->states[2].enter = s5p_enter_idle_deep_topoff;
 	device->states[2].exit_latency = 300;	/* uS */
-	device->states[2].target_residency = 7000;
+	device->states[2].target_residency = 7000; //DAVE: TOP OFF - check 2000 and start from 8000 and go up in 1000s
 	device->states[2].flags = CPUIDLE_FLAG_TIME_VALID |
 					CPUIDLE_FLAG_CHECK_BM;
 	strcpy(device->states[2].name, "IDLE2-TOPOFF");
