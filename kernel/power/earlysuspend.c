@@ -15,6 +15,12 @@
  *
  */
 
+
+
+#include <linux/cpufreq.h>
+#include <linux/interrupt.h>
+#include <linux/deep_idle.h>
+
 #include <linux/earlysuspend.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
@@ -29,6 +35,8 @@
 #include <mach/cpuidle.h>
 #endif /* CONFIG_S5P_IDLE2 */
 
+#define DISABLE_FURTHER_CPUFREQ 	0x10
+#define ENABLE_FURTHER_CPUFREQ 		0x20
 
 enum {
 	DEBUG_USER_STATE = 1U << 0,
@@ -45,6 +53,7 @@ static void late_resume(struct work_struct *work);
 static DECLARE_WORK(early_suspend_work, early_suspend);
 static DECLARE_WORK(late_resume_work, late_resume);
 static DEFINE_SPINLOCK(state_lock);
+static int ret;
 enum {
 	SUSPEND_REQUESTED = 0x1,
 	SUSPENDED = 0x2,
@@ -91,6 +100,23 @@ static void early_suspend(struct work_struct *work)
 		earlysuspend_active_fn(true);
 #endif
 		state |= SUSPENDED;
+
+		//dave
+		if (deepidle_is_enabled()) 
+		{
+			preempt_enable();
+			local_irq_enable();
+			ret = cpufreq_driver_target(cpufreq_cpu_get(0), 400000,
+					DISABLE_FURTHER_CPUFREQ);
+			if (ret < 0)
+				printk(KERN_WARNING "%s: Error %d locking CPUfreq\n", __func__, ret);
+			else
+				printk(KERN_INFO "%s: CPUfreq locked to 400MHz\n", __func__);
+			local_irq_disable();
+			preempt_disable();
+		}
+		//dave: method copied from thalamus
+
 	}
 	else
 		abort = 1;
@@ -138,6 +164,22 @@ static void late_resume(struct work_struct *work)
 #ifdef CONFIG_S5P_IDLE2
 		earlysuspend_active_fn(false);
 #endif
+		//dave
+		if (deepidle_is_enabled()) 
+		{
+			preempt_enable();
+			local_irq_enable();
+			ret = cpufreq_driver_target(cpufreq_cpu_get(0), 400000,
+					ENABLE_FURTHER_CPUFREQ);
+			if (ret < 0)
+				printk(KERN_WARNING "%s: Error %d unlocking CPUfreq\n", __func__, ret);
+			else
+				printk(KERN_INFO "%s: CPUfreq unlocked from 400MHz\n", __func__);
+			local_irq_disable();
+			preempt_disable();
+		}
+		//dave: method copied from thalamus
+
 		state &= ~SUSPENDED;
 	}
 	else
