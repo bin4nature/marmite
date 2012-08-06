@@ -37,10 +37,6 @@
 #include <plat/irqs.h>
 #include "herring.h"
 
-#ifdef CONFIG_S5P_IDLE2
-#include <mach/cpuidle.h>
-#endif /* CONFIG_S5P_IDLE2 */
-
 #define IRQ_BT_HOST_WAKE      IRQ_EINT(21)
 
 static struct wake_lock rfkill_wake_lock;
@@ -52,6 +48,16 @@ static struct wake_lock rfkill_wake_lock;
 
 static struct rfkill *bt_rfk;
 static const char bt_name[] = "bcm4329";
+
+#ifdef CONFIG_CPU_DIDLE
+static bool bt_running = false;
+
+bool bt_is_running(void)
+{
+    return bt_running;
+}
+EXPORT_SYMBOL(bt_is_running);
+#endif
 
 static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 {
@@ -122,6 +128,10 @@ static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 	case RFKILL_USER_STATE_SOFT_BLOCKED:
 		pr_debug("[BT] Device Powering OFF\n");
 
+#ifdef CONFIG_CPU_DIDLE
+		bt_running = false;
+#endif
+
 		ret = disable_irq_wake(irq);
 		if (ret < 0)
 			pr_err("[BT] unset wakeup src failed\n");
@@ -163,17 +173,14 @@ irqreturn_t bt_host_wake_irq_handler(int irq, void *dev_id)
 {
 	pr_debug("[BT] bt_host_wake_irq_handler start\n");
 
-	if (gpio_get_value(GPIO_BT_HOST_WAKE)) {
+#ifdef CONFIG_CPU_DIDLE
+	bt_running = true;
+#endif
+
+	if (gpio_get_value(GPIO_BT_HOST_WAKE))
 		wake_lock(&rfkill_wake_lock);
-#ifdef CONFIG_S5P_IDLE2
-		idle2_needs_topon();
-#endif
-	} else {
+	else
 		wake_lock_timeout(&rfkill_wake_lock, HZ);
-#ifdef CONFIG_S5P_IDLE2
-		idle2_cancel_topon(10 * HZ);
-#endif
-	}
 
 	return IRQ_HANDLED;
 }
