@@ -111,7 +111,8 @@ static void disable_led_notification(void)
 		del_timer(&blink_timer);
 
 	wake_unlock(&bln_wake_lock);
-
+	blink_interval = 300;	/* on / off every 750ms */
+	proportional_timer = 150;
 }
 
 static ssize_t backlightnotification_status_read(struct device *dev,
@@ -323,11 +324,13 @@ static void blink_callback(struct work_struct *blink_work)
 		if (blink_finalstate)
 			bln_enable_backlights();
 		else
+		{
+			blink_interval = 300;	/* on / off every 750ms */
+			proportional_timer = 150;
 			bln_disable_backlights();
+		}
 		del_timer(&blink_timer);
 		wake_unlock(&bln_wake_lock);
-		blink_interval = 300;	/* on / off every 750ms */
-		proportional_timer = 150;
 		return;
 	}
 
